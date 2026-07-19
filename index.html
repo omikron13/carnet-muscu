@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121214">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Carnet Muscu</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#121214; --card:#1B1B1F; --card2:#222228; --line:#2A2A30;
+  --text:#EDEDE9; --dim:#8F8F97; --faint:#5C5C64;
+  --red:#D24B4B; --amber:#E3B341;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg)}
+body{color:var(--text);font-family:'Inter',ui-sans-serif,system-ui,sans-serif;font-size:15px;line-height:1.45}
+button{border:0;background:none;color:inherit;font:inherit;padding:0;cursor:pointer;text-align:left}
+img{display:block}
+.wrap{max-width:430px;margin:0 auto;padding:0 16px 118px}
+.disp{font-family:'Anton','Arial Black',sans-serif;letter-spacing:.03em;text-transform:uppercase;font-weight:400}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px}
+.primary{background:var(--text);color:#121214;border-radius:12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px}
+.primary:active,.ghost:active,.chip:active{opacity:.8}
+.primary[disabled]{opacity:.35;pointer-events:none}
+.ghost{border:1px solid var(--line);border-radius:12px;color:var(--dim);font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px}
+input,select{background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--text);
+  height:42px;padding:0 12px;font-family:'IBM Plex Mono',monospace;font-size:14px;outline:none;width:100%}
+input:focus,select:focus{border-color:var(--dim)}
+input[type=date]{color-scheme:dark}
+select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238F8F97' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
+.lbl{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:var(--faint);text-transform:uppercase}
+.step{width:30px;height:38px;border-radius:10px;background:var(--card2);border:1px solid var(--line);color:var(--dim);
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.chiprow{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.chiprow::-webkit-scrollbar{display:none}
+.chip{display:flex;align-items:center;gap:7px;padding:8px 13px;border-radius:999px;border:1px solid var(--line);
+  color:var(--dim);font-size:13px;font-weight:600;white-space:nowrap;flex:0 0 auto;background:transparent}
+.chip.on{border-color:var(--cc,var(--text));color:var(--text);background:var(--card2)}
+.thumb{width:54px;height:54px;border-radius:12px;object-fit:cover;background:var(--card2);border:1px solid var(--line);flex:0 0 auto}
+.thumb.ph{display:flex;align-items:center;justify-content:center;color:var(--faint)}
+.badge{display:inline-flex;align-items:center;gap:5px;background:var(--amber);color:#121214;border-radius:8px;
+  font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:10px;letter-spacing:.06em;padding:3px 7px}
+.notice{border:1px solid var(--red);background:rgba(210,75,75,.07);border-radius:14px;padding:12px 14px;font-size:13px;color:var(--dim)}
+.upbar{border:1px solid var(--amber);background:rgba(227,179,65,.08);border-radius:12px;padding:9px 11px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--dim)}
+.sticky{position:sticky;top:0;z-index:10;background:rgba(18,18,20,.94);backdrop-filter:blur(8px);
+  margin:0 -16px;padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+.tabbar{position:fixed;bottom:0;left:0;right:0;z-index:20;background:rgba(18,18,20,.96);backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.tabbar .in{max-width:430px;margin:0 auto;display:flex}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 0 8px;color:var(--faint);position:relative}
+.tab.on{color:var(--text)}
+.tab span{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase}
+.dot{position:absolute;top:7px;right:calc(50% - 24px);width:6px;height:6px;border-radius:50%;background:#4CA96B}
+.modalback{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--card);border-top:1px solid var(--line);border-radius:24px 24px 0 0;width:100%;max-width:430px;
+  padding:16px 16px 28px;max-height:88vh;overflow-y:auto}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:86px;z-index:60;background:var(--card2);
+  border:1px solid var(--line);border-radius:12px;padding:10px 16px;font-size:13.5px;color:var(--text);
+  opacity:0;pointer-events:none;transition:opacity .25s;max-width:88vw;text-align:center}
+#toast.show{opacity:1}
+.row{display:flex;align-items:center}
+.danger{color:var(--red)}
+:focus-visible{outline:2px solid var(--dim);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal"></div>
+<div id="toast"></div>
+<input type="file" id="photoInput" accept="image/*" hidden>
+<input type="file" id="importInput" accept=".json,application/json" hidden>
+
+<script>
+/* ================================================================
+   CARNET MUSCU — application autonome (aucune dépendance, hors-ligne)
+   Données : localStorage du navigateur + export / import JSON
+   ================================================================ */
+
+const KEY = "carnet-muscu:v2";
+const INC = 2.5; // incrément de charge conseillé (kg)
+
+const ORDER = ["Pectoraux","Dos","Épaules","Biceps","Triceps","Jambes","Abdos"];
+const COLORS = {
+  "Pectoraux":"#D24B4B","Dos":"#4C82D8","Épaules":"#E3B341","Biceps":"#C77DBB",
+  "Triceps":"#E07A3F","Jambes":"#4CA96B","Abdos":"#9AA3AD"
+};
+const SEED = {
+  "Pectoraux":["Développé couché","Développé incliné","Écarté poulie"],
+  "Dos":["Tractions","Rowing barre","Tirage vertical"],
+  "Épaules":["Développé militaire","Élévations latérales","Oiseau"],
+  "Biceps":["Curl barre","Curl haltères","Curl marteau"],
+  "Triceps":["Extension poulie","Barre au front","Dips triceps"],
+  "Jambes":["Squat","Presse à cuisses","Leg curl"],
+  "Abdos":["Crunch poulie","Relevé de jambes","Planche"]
+};
+
+/* ---------------- état ---------------- */
+let D = null;                 // données persistées
+let TAB = "seance";
+let SEL = [];                 // groupes sélectionnés pour nouvelle séance
+let NEWDATE = today();
+let OVERRIDE = false;         // ignorer la règle de repos
+let GSEL = ORDER[0];          // groupe affiché dans l'onglet Ateliers
+let PROG = null;              // atelier sélectionné dans Progrès
+let EXPANDED = null;          // séance dépliée dans l'historique
+let CONFIRM = null;           // clé de confirmation (suppressions)
+let ED = null;                // brouillon d'atelier (modale)
+let PHOTO_TARGET = null;      // destinataire de la prochaine photo
+
+/* ---------------- utilitaires ---------------- */
+function uid(){ return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3); }
+function today(){ return new Date().toISOString().slice(0,10); }
+function num(v){ const n=parseFloat(String(v).trim().replace(",",".")); return isNaN(n)?0:n; }
+function kg(n){ return n%1===0 ? String(n) : n.toFixed(1).replace(".",","); }
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function fmt(d,opts){ return new Date(d+"T12:00:00").toLocaleDateString("fr-FR",opts||{weekday:"short",day:"numeric",month:"short"}); }
+function addDays(d,n){ const t=new Date(d+"T12:00:00"); t.setDate(t.getDate()+n); return t.toISOString().slice(0,10); }
+function dayDiff(a,b){ return Math.round((Date.parse(a+"T12:00:00")-Date.parse(b+"T12:00:00"))/86400e3); }
+function vol(s){ return s.entries.reduce((t,e)=>t+e.poids*e.reps*e.series,0); }
+function nf(n){ return Math.round(n).toLocaleString("fr-FR"); }
+
+/* icônes SVG inline */
+const P = {
+  plus:'<path d="M12 5v14M5 12h14"/>', minus:'<path d="M5 12h14"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>', x:'<path d="M18 6 6 18M6 6l12 12"/>',
+  trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>',
+  pencil:'<path d="M12 20h9M16.5 3.5l4 4L7 21H3v-4z"/>',
+  camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3"/>',
+  chevD:'<path d="m6 9 6 6 6-6"/>', chevU:'<path d="m18 15-6-6-6 6"/>',
+  dl:'<path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/>',
+  ul:'<path d="M12 21V9m0 0-4 4m4-4 4 4M4 3h16"/>',
+  barbell:'<path d="M2 12h20"/><rect x="5" y="8" width="3" height="8" rx="1"/><rect x="16" y="8" width="3" height="8" rx="1"/>',
+  grid:'<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>',
+  line:'<path d="M4 19h16M6 15l4-4 3 3 5-6"/>',
+  clip:'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h4"/>',
+  up:'<path d="M12 19V5m0 0-5 5m5-5 5 5"/>'
+};
+function ico(n,s,c){ s=s||16;
+  return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="'+(c||"currentColor")+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto">'+P[n]+'</svg>';
+}
+function plate(g,s,hole){ s=s||11;
+  const h=Math.max(2,Math.round(s*.34));
+  return '<span style="width:'+s+'px;height:'+s+'px;background:'+(COLORS[g]||"#888")+';border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto">'
+       + '<span style="width:'+h+'px;height:'+h+'px;background:'+(hole||"var(--card)")+';border-radius:50%"></span></span>';
+}
+
+/* ---------------- persistance ---------------- */
+function seed(){
+  const ateliers=[];
+  ORDER.forEach(g=>SEED[g].forEach(n=>ateliers.push({id:uid(),group:g,name:n,photo:null,poids:20,reps:10,series:3})));
+  return {v:2,ateliers,sessions:[],active:null,lastExport:null};
+}
+function load(){
+  try{
+    const raw=localStorage.getItem(KEY);
+    if(raw){ D=Object.assign(seed(),JSON.parse(raw)); return; }
+  }catch(e){}
+  D=seed(); save();
+}
+function save(){
+  try{ localStorage.setItem(KEY,JSON.stringify(D)); }
+  catch(e){ toast("Stockage plein ou indisponible — exporte tes données en JSON."); }
+}
+function toast(m){
+  const t=document.getElementById("toast");
+  t.textContent=m; t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2600);
+}
+
+/* ---------------- dérivés ---------------- */
+const byId = id => D.ateliers.find(a=>a.id===id);
+const ofGroup = g => D.ateliers.filter(a=>a.group===g);
+function hist(id){
+  const h=[];
+  D.sessions.forEach(s=>s.entries.forEach(e=>{ if(e.atelierId===id) h.push({date:s.date,poids:e.poids,reps:e.reps,series:e.series}); }));
+  h.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+  return h;
+}
+/* Alerte de progression : ≥ 2 séances validées au poids de travail actuel */
+function needUp(a){
+  if(!(a.poids>0)) return false;
+  const h=hist(a.id); let c=0;
+  for(let i=h.length-1;i>=0;i--){ if(h[i].poids===a.poids)c++; else break; }
+  return c>=2;
+}
+const sugg = a => a.poids+INC;
+function restConflict(date){
+  return D.sessions.filter(s=>Math.abs(dayDiff(date,s.date))<=1);
+}
+function nextAllowed(from){
+  let d=from,guard=0;
+  while(guard++<120){
+    const c=restConflict(d);
+    if(!c.length) return d;
+    const maxD=c.map(s=>s.date).sort().pop();
+    d=addDays(maxD,2);
+    if(dayDiff(d,from)<0) d=addDays(from,1);
+  }
+  return d;
+}
+
+/* ---------------- confirmation deux temps ---------------- */
+function conf(key,fn){
+  if(CONFIRM===key){ CONFIRM=null; fn(); }
+  else{
+    CONFIRM=key; render(); renderModal();
+    setTimeout(()=>{ if(CONFIRM===key){ CONFIRM=null; render(); renderModal(); } },2600);
+  }
+}
+
+/* ================================================================
+   VUES
+   ================================================================ */
+
+function vStart(){
+  const week=D.sessions.filter(s=>dayDiff(today(),s.date)>=0&&dayDiff(today(),s.date)<7).length;
+  const last=D.sessions[0];
+  const conflicts=restConflict(NEWDATE);
+  const blocked=conflicts.length>0&&!OVERRIDE;
+  const ok=SEL.length===2&&!blocked;
+  const nxt=nextAllowed(NEWDATE);
+
+  return `
+  <div style="padding-top:26px">
+    <div class="row" style="justify-content:space-between;align-items:flex-end">
+      <h1 class="disp" style="font-size:34px;line-height:1;margin:0">Carnet<br>Muscu</h1>
+      ${ico("barbell",26,"var(--faint)")}
+    </div>
+    <div class="row" style="gap:8px;margin:12px 0 22px;color:var(--dim);font-size:13px">
+      ${week>0
+        ? ico("up",14,"var(--amber)")+`<span>${week} séance${week>1?"s":""} ces 7 derniers jours</span>`
+        : `<span>Aucune séance cette semaine — on s’y met ?</span>`}
+      ${last?`<span class="mono" style="color:var(--faint);font-size:11px;margin-left:auto">dern. ${fmt(last.date)}</span>`:""}
+    </div>
+
+    <div class="card" style="padding:16px">
+      <div class="lbl" style="margin-bottom:10px">Nouvelle séance</div>
+
+      <div class="lbl" style="font-size:10px;margin-bottom:6px">Date</div>
+      <input type="date" value="${NEWDATE}" onchange="A.setDate(this.value)">
+
+      <div class="lbl" style="font-size:10px;margin:14px 0 6px">Groupes musculaires — ${SEL.length}/2</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${ORDER.map(g=>{
+          const on=SEL.includes(g);
+          return `<button class="chip ${on?"on":""}" style="--cc:${COLORS[g]};justify-content:flex-start"
+                    onclick="A.tg('${g}')">${plate(g,10,on?"var(--card2)":"var(--card)")} ${g}</button>`;
+        }).join("")}
+      </div>
+
+      ${conflicts.length?`
+        <div class="notice" style="margin-top:14px">
+          <div style="color:var(--text);font-weight:600;margin-bottom:3px">Règle de repos</div>
+          Séance du ${fmt(conflicts[conflicts.length-1].date)} trop proche : un jour de repos complet est requis entre deux séances.
+          <div class="row" style="gap:14px;margin-top:9px">
+            <button style="color:var(--text);font-weight:600;font-size:13px" onclick="A.setDate('${nxt}')">→ Prendre le ${fmt(nxt)}</button>
+            <button style="color:${OVERRIDE?"var(--amber)":"var(--faint)"};font-size:12px" onclick="A.override()">${OVERRIDE?"Règle ignorée pour cette fois":"Ignorer la règle"}</button>
+          </div>
+        </div>`:""}
+
+      <button class="primary" style="width:100%;height:46px;font-size:15px;margin-top:16px" ${ok?"":"disabled"}
+        onclick="A.start()">Commencer la séance</button>
+    </div>
+
+    <div class="mono" style="color:var(--faint);font-size:11px;margin-top:14px;line-height:1.7">
+      Programme : 2 groupes par séance · 3 ateliers par groupe · 1 jour de repos minimum entre les séances.
+    </div>
+  </div>`;
+}
+
+function vSession(){
+  const S=D.active;
+  const list=S.groups.flatMap(g=>ofGroup(g));
+  const doneN=list.filter(a=>gv(a).done).length;
+  const volume=list.reduce((t,a)=>{const v=gv(a);return v.done?t+v.poids*v.reps*v.series:t;},0);
+
+  return `
+  <div class="sticky">
+    <div class="row" style="justify-content:space-between">
+      <div class="row" style="gap:10px">
+        <span class="disp" style="font-size:24px">${fmt(S.date)}</span>
+        <span class="row" style="gap:4px">${S.groups.map(g=>plate(g,10,"var(--bg)")).join("")}</span>
+      </div>
+      <button style="color:${CONFIRM==="cancel"?"var(--red)":"var(--faint)"};font-size:13px;font-weight:600"
+        onclick="A.cancel()">${CONFIRM==="cancel"?"Confirmer ?":"Annuler"}</button>
+    </div>
+    <div class="mono" style="color:var(--faint);font-size:12px;margin-top:5px">
+      ${S.groups.join(" + ")} · ${doneN}/${list.length} validés · ${nf(volume)} kg
+    </div>
+  </div>
+
+  <div style="padding-top:16px">
+    ${S.groups.map(g=>{
+      const as=ofGroup(g);
+      return `
+      <div class="row" style="gap:8px;margin:6px 0 10px">
+        ${plate(g,12,"var(--bg)")}
+        <span class="disp" style="font-size:16px">${g}</span>
+        <span class="mono" style="color:var(--faint);font-size:11px;margin-left:auto">${as.filter(a=>gv(a).done).length}/${as.length}</span>
+      </div>
+      ${as.length===0?`<div class="mono" style="color:var(--faint);font-size:12px;margin-bottom:14px">Aucun atelier — ajoute-les dans l’onglet Ateliers.</div>`:""}
+      ${as.map(a=>cardSession(a)).join("")}`;
+    }).join("")}
+
+    <button class="primary" style="width:100%;height:48px;font-size:15px;margin-top:6px" ${doneN?"":"disabled"}
+      onclick="A.finish()">${ico("check",17)} Terminer la séance</button>
+    <div class="mono" style="color:var(--faint);font-size:11px;margin-top:10px;text-align:center">
+      Les valeurs validées deviennent tes nouvelles charges de référence.
+    </div>
+  </div>`;
+}
+
+function gv(a){ /* valeurs de travail de la séance en cours */
+  const V=D.active.vals;
+  if(!V[a.id]) V[a.id]={poids:a.poids,reps:a.reps,series:a.series,done:false};
+  return V[a.id];
+}
+
+function cardSession(a){
+  const v=gv(a);
+  const h=hist(a.id);
+  const lastH=h.length?h[h.length-1]:null;
+  const flag=needUp(a)&&!v.done;
+
+  return `
+  <div class="card" style="padding:14px;margin-bottom:12px">
+    <div class="row" style="gap:12px">
+      ${a.photo
+        ?`<img class="thumb" src="${a.photo}" alt="">`
+        :`<div class="thumb ph">${ico("camera",18)}</div>`}
+      <div style="min-width:0;flex:1">
+        <div style="font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.name)}</div>
+        <div class="mono" style="color:var(--faint);font-size:11px;margin-top:2px">
+          ${lastH?`Dernier : ${kg(lastH.poids)} kg × ${lastH.reps} × ${lastH.series} · ${fmt(lastH.date)}`:"Première fois sur cet atelier"}
+        </div>
+      </div>
+      ${v.done?ico("check",18,"var(--text)"):""}
+    </div>
+
+    ${flag?`
+      <div class="upbar" style="margin-top:11px">
+        <span><b style="color:var(--text)">2 séances à ${kg(a.poids)} kg</b> — passe à ${kg(sugg(a))} kg</span>
+        <button class="badge" onclick="A.applySugg('${a.id}')">+${kg(INC)} KG</button>
+      </div>`:""}
+
+    ${v.done?`
+      <div class="row" style="justify-content:space-between;margin-top:11px">
+        <span class="mono" style="font-size:14px;font-weight:600">${kg(v.poids)} kg × ${v.reps} × ${v.series}</span>
+        <button style="color:var(--dim);font-size:13px;font-weight:600" onclick="A.reopen('${a.id}')">Modifier</button>
+      </div>`
+    :`
+      <div class="row" style="gap:0;justify-content:space-between;margin-top:12px">
+        ${stepGroup(a.id,"poids","Poids",2.5,54)}
+        ${stepGroup(a.id,"reps","Réps",1,42)}
+        ${stepGroup(a.id,"series","Séries",1,38)}
+      </div>
+      <button class="primary" style="width:100%;height:40px;font-size:14px;margin-top:10px"
+        onclick="A.validate('${a.id}')">${ico("check",15)} Valider</button>`}
+  </div>`;
+}
+
+function stepGroup(id,f,label,st,w){
+  const v=gv(byId(id))[f];
+  return `
+  <div>
+    <div class="lbl" style="font-size:9.5px;margin-bottom:4px;text-align:center">${label}</div>
+    <div class="row" style="gap:3px">
+      <button class="step" onclick="A.bump('${id}','${f}',${-st})">${ico("minus",13)}</button>
+      <input type="text" inputmode="decimal" value="${kg(v)}" style="width:${w}px;height:38px;text-align:center;padding:0 4px;font-weight:600"
+        onchange="A.setVal('${id}','${f}',this.value)" onfocus="this.select()">
+      <button class="step" onclick="A.bump('${id}','${f}',${st})">${ico("plus",13)}</button>
+    </div>
+  </div>`;
+}
+
+function vAteliers(){
+  const as=ofGroup(GSEL);
+  return `
+  <div style="padding-top:26px">
+    <h2 class="disp" style="font-size:26px;margin:0 0 16px">Ateliers</h2>
+
+    <div class="chiprow" style="margin-bottom:6px">
+      ${ORDER.map(g=>`
+        <button class="chip ${g===GSEL?"on":""}" style="--cc:${COLORS[g]}" onclick="A.gsel('${g}')">
+          ${plate(g,9,g===GSEL?"var(--card2)":"var(--bg)")} ${g}
+        </button>`).join("")}
+    </div>
+
+    <div class="mono" style="font-size:11px;margin:4px 0 12px;color:${as.length===3?"var(--faint)":"var(--amber)"}">
+      ${as.length}/3 ateliers ${as.length===3?"— programme complet":"— objectif : 3 par groupe"}
+    </div>
+
+    ${as.map(a=>{
+      const ck="a:"+a.id, flag=needUp(a);
+      const h=hist(a.id), lastH=h.length?h[h.length-1]:null;
+      return `
+      <div class="card" style="padding:13px;margin-bottom:10px">
+        <div class="row" style="gap:12px">
+          <button onclick="A.photoFor('${a.id}')" aria-label="Photo de l’atelier">
+            ${a.photo?`<img class="thumb" src="${a.photo}" alt="">`:`<div class="thumb ph">${ico("camera",18)}</div>`}
+          </button>
+          <div style="flex:1;min-width:0">
+            <div class="row" style="gap:8px">
+              <span style="font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.name)}</span>
+              ${flag?`<span class="badge">${ico("up",10)} À AUGMENTER</span>`:""}
+            </div>
+            <div class="mono" style="color:var(--dim);font-size:12px;margin-top:3px">
+              ${kg(a.poids)} kg · ${a.reps} réps · ${a.series} séries
+            </div>
+            <div class="mono" style="color:var(--faint);font-size:11px;margin-top:2px">
+              ${lastH?`Dern. séance : ${kg(lastH.poids)} kg × ${lastH.reps} réps × ${lastH.series} · ${fmt(lastH.date)}`:"Pas encore travaillé"}
+            </div>
+            ${flag?`<div class="mono" style="color:var(--faint);font-size:11px;margin-top:2px">Conseillé : ${kg(sugg(a))} kg</div>`:""}
+          </div>
+          <div class="row" style="gap:4px">
+            <button style="padding:7px;color:var(--faint)" onclick="A.edit('${a.id}')" aria-label="Modifier">${ico("pencil",16)}</button>
+            <button style="padding:7px;color:${CONFIRM===ck?"var(--red)":"var(--faint)"}"
+              onclick="A.delAtelier('${a.id}')" aria-label="Supprimer">${ico("trash",16)}</button>
+          </div>
+        </div>
+      </div>`;
+    }).join("")}
+
+    <button class="ghost" style="width:100%;height:46px;font-size:14px;border-style:dashed;color:var(--text)"
+      onclick="A.edit(null)">${ico("plus",16)} Ajouter un atelier — ${GSEL}</button>
+  </div>`;
+}
+
+function vProgress(){
+  const withH=D.ateliers.filter(a=>hist(a.id).length>0);
+  if(PROG===null||!byId(PROG)) PROG=withH.length?withH[0].id:(D.ateliers[0]?D.ateliers[0].id:null);
+  const a=PROG?byId(PROG):null;
+  const h=a?hist(a.id):[];
+
+  return `
+  <div style="padding-top:26px">
+    <h2 class="disp" style="font-size:26px;margin:0 0 16px">Progrès</h2>
+
+    <select onchange="A.prog(this.value)" style="margin-bottom:12px">
+      ${ORDER.map(g=>{
+        const as=ofGroup(g); if(!as.length)return"";
+        return `<optgroup label="${g}">${as.map(x=>`<option value="${x.id}" ${x.id===PROG?"selected":""}>${esc(x.name)}${hist(x.id).length?"":" (aucune donnée)"}</option>`).join("")}</optgroup>`;
+      }).join("")}
+    </select>
+
+    ${!a?`<div class="mono" style="color:var(--faint);font-size:13px;text-align:center;padding:40px 0">Aucun atelier.</div>`:`
+    <div class="card" style="padding:14px">
+      <div class="row" style="gap:8px;margin-bottom:6px">
+        ${plate(a.group,10)}
+        <span class="lbl">${esc(a.name)} — charge (kg)</span>
+      </div>
+      ${chartSVG(h)}
+      ${h.length?`
+        <div class="mono" style="color:var(--dim);font-size:12px;margin-top:8px">
+          ${kg(h[0].poids)} → ${kg(h[h.length-1].poids)} kg
+          <span style="color:${h[h.length-1].poids>=h[0].poids?"var(--text)":"var(--red)"}"> · ${h[h.length-1].poids>=h[0].poids?"+":"−"}${kg(Math.abs(h[h.length-1].poids-h[0].poids))} kg</span>
+          · ${h.length} séance${h.length>1?"s":""}
+        </div>`:""}
+    </div>
+
+    ${needUp(a)?`
+      <div class="upbar" style="margin-top:12px">
+        <span><b style="color:var(--text)">Palier atteint :</b> 2 séances à ${kg(a.poids)} kg — vise ${kg(sugg(a))} kg.</span>
+      </div>`:""}
+
+    ${h.length?`
+      <div class="lbl" style="margin:18px 0 8px">Relevés</div>
+      ${h.slice().reverse().map(e=>`
+        <div class="card row" style="padding:11px 14px;margin-bottom:8px;justify-content:space-between">
+          <span class="mono" style="color:var(--faint);font-size:12px">${fmt(e.date)}</span>
+          <span class="mono" style="font-size:13.5px;font-weight:600">${kg(e.poids)} kg × ${e.reps} × ${e.series}</span>
+        </div>`).join("")}`:""}`}
+  </div>`;
+}
+
+function chartSVG(h){
+  const pts=h.map(e=>({d:e.date,v:e.poids}));
+  if(pts.length<2)
+    return `<div class="mono" style="color:var(--faint);font-size:12px;text-align:center;padding:30px 0">Encore ${2-pts.length} séance${pts.length?"":"s"} pour tracer la courbe.</div>`;
+  const W=340,H=175,L=40,R=14,T=16,B=26;
+  const vs=pts.map(p=>p.v);
+  let mn=Math.min(...vs),mx=Math.max(...vs);
+  if(mx-mn<2){mn-=1.5;mx+=1.5}else{const p=(mx-mn)*.12;mn-=p;mx+=p}
+  const X=i=>L+(W-L-R)*(pts.length===1?0.5:i/(pts.length-1));
+  const Y=v=>T+(H-T-B)*(1-(v-mn)/(mx-mn));
+  const gy=[mn,(mn+mx)/2,mx];
+  const poly=pts.map((p,i)=>X(i).toFixed(1)+","+Y(p.v).toFixed(1)).join(" ");
+  return `
+  <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Courbe de progression">
+    ${gy.map(v=>`<line x1="${L}" x2="${W-R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="var(--line)" stroke-dasharray="3 3"/>
+      <text x="${L-6}" y="${(Y(v)+3.5).toFixed(1)}" text-anchor="end" font-size="9.5" fill="var(--faint)" font-family="IBM Plex Mono,monospace">${kg(Math.round(v*2)/2)}</text>`).join("")}
+    <polyline points="${poly}" fill="none" stroke="var(--text)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${pts.map((p,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="${i===pts.length-1?4:2.8}" fill="var(--text)"/>`).join("")}
+    <text x="${X(pts.length-1).toFixed(1)}" y="${(Y(pts[pts.length-1].v)-9).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="var(--text)" font-family="IBM Plex Mono,monospace" font-weight="600">${kg(pts[pts.length-1].v)}</text>
+    <text x="${L}" y="${H-8}" font-size="9.5" fill="var(--faint)" font-family="IBM Plex Mono,monospace">${fmt(pts[0].d,{day:"numeric",month:"short"})}</text>
+    <text x="${W-R}" y="${H-8}" text-anchor="end" font-size="9.5" fill="var(--faint)" font-family="IBM Plex Mono,monospace">${fmt(pts[pts.length-1].d,{day:"numeric",month:"short"})}</text>
+  </svg>`;
+}
+
+function vHistory(){
+  return `
+  <div style="padding-top:26px">
+    <h2 class="disp" style="font-size:26px;margin:0 0 16px">Historique</h2>
+
+    ${D.sessions.length===0?`
+      <div style="text-align:center;padding:40px 0;color:var(--faint)">
+        ${ico("clip",32,"var(--line)")}
+        <div style="font-size:14px;margin-top:10px">Aucune séance enregistrée.<br>La première t’attend dans l’onglet Séance.</div>
+      </div>`:""}
+
+    ${D.sessions.map(s=>{
+      const open=EXPANDED===s.id, ck="s:"+s.id;
+      return `
+      <div class="card" style="margin-bottom:10px;overflow:hidden">
+        <button style="width:100%;padding:14px" onclick="A.expand('${s.id}')">
+          <div class="row" style="justify-content:space-between">
+            <span class="row" style="gap:7px">
+              ${s.groups.map(g=>plate(g,10)).join("")}
+              <span style="font-weight:600;font-size:14.5px">${s.groups.join(" + ")}</span>
+            </span>
+            <span class="row" style="gap:8px">
+              <span class="mono" style="color:var(--dim);font-size:12px">${fmt(s.date)}</span>
+              ${ico(open?"chevU":"chevD",15,"var(--faint)")}
+            </span>
+          </div>
+          <div class="mono" style="color:var(--faint);font-size:11px;margin-top:5px">
+            ${s.entries.length} atelier${s.entries.length>1?"s":""} · ${nf(vol(s))} kg
+          </div>
+        </button>
+        ${open?`
+        <div style="padding:0 14px 14px">
+          <div style="border-top:1px solid var(--line);padding-top:11px">
+            ${s.groups.map(g=>{
+              const es=s.entries.filter(e=>e.group===g);
+              if(!es.length)return"";
+              return `<div style="margin-bottom:9px">
+                <div class="row" style="gap:7px">${plate(g,9)}<span style="font-size:13px;font-weight:600">${g}</span></div>
+                ${es.map(e=>`<div class="row" style="justify-content:space-between;margin:3px 0 0 16px">
+                  <span style="color:var(--dim);font-size:12.5px">${esc(e.name)}</span>
+                  <span class="mono" style="font-size:12.5px">${kg(e.poids)} × ${e.reps} × ${e.series}</span>
+                </div>`).join("")}
+              </div>`;
+            }).join("")}
+          </div>
+          <button class="row" style="gap:6px;font-size:12px;color:${CONFIRM===ck?"var(--red)":"var(--faint)"}"
+            onclick="A.delSession('${s.id}')">${ico("trash",13)} ${CONFIRM===ck?"Confirmer la suppression ?":"Supprimer cette séance"}</button>
+        </div>`:""}
+      </div>`;
+    }).join("")}
+
+    <div class="card" style="padding:16px;margin-top:18px">
+      <div class="lbl" style="margin-bottom:8px">Sauvegarde</div>
+      <div style="font-size:13px;color:var(--dim);line-height:1.55">
+        Enregistrement automatique dans ce navigateur (localStorage), photos comprises.
+        Exporte régulièrement un fichier JSON : c’est ta sauvegarde portable.
+      </div>
+      <div class="mono" style="color:var(--faint);font-size:11px;margin-top:8px">
+        Dernier export : ${D.lastExport?fmt(D.lastExport.slice(0,10))+" · "+new Date(D.lastExport).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"jamais"}
+      </div>
+      <div class="row" style="gap:10px;margin-top:13px">
+        <button class="primary" style="flex:1;height:42px;font-size:14px" onclick="A.exportJSON()">${ico("dl",15)} Exporter JSON</button>
+        <button class="ghost" style="flex:1;height:42px;font-size:14px" onclick="document.getElementById('importInput').click()">${ico("ul",15)} Importer</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------------- modale atelier ---------------- */
+function renderModal(){
+  const m=document.getElementById("modal");
+  if(!ED){ m.innerHTML=""; return; }
+  const ck="ed-del";
+  m.innerHTML=`
+  <div class="modalback" onclick="if(event.target===this)A.closeEdit()">
+    <div class="sheet">
+      <div class="row" style="justify-content:space-between;margin-bottom:14px">
+        <span class="disp" style="font-size:18px">${ED.id?"Modifier l’atelier":"Nouvel atelier"} — ${ED.group}</span>
+        <button style="padding:6px;color:var(--dim)" onclick="A.closeEdit()">${ico("x",18)}</button>
+      </div>
+
+      ${ED.photo
+        ?`<img src="${ED.photo}" alt="" style="width:100%;height:150px;object-fit:cover;border-radius:14px;border:1px solid var(--line)">
+          <div class="row" style="gap:14px;margin-top:8px">
+            <button style="color:var(--dim);font-size:13px;font-weight:600" onclick="A.photoFor('ED')">${ico("camera",14)} Changer</button>
+            <button style="color:var(--faint);font-size:13px" onclick="A.edPhoto(null)">Retirer la photo</button>
+          </div>`
+        :`<button class="ghost" style="width:100%;height:88px;border-style:dashed;flex-direction:column;gap:6px;color:var(--faint)"
+            onclick="A.photoFor('ED')">${ico("camera",22)}<span style="font-size:12.5px">Prendre / choisir une photo</span></button>`}
+
+      <div class="lbl" style="font-size:10px;margin:16px 0 6px">Nom de l’atelier</div>
+      <input type="text" value="${esc(ED.name)}" style="font-family:'Inter',sans-serif"
+        onchange="ED.name=this.value" placeholder="Ex. Presse à cuisses">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px">
+        ${[["poids","Poids (kg)"],["reps","Réps"],["series","Séries"]].map(([f,l])=>`
+          <div>
+            <div class="lbl" style="font-size:10px;margin-bottom:6px">${l}</div>
+            <input type="text" inputmode="decimal" value="${kg(ED[f])}" style="text-align:center"
+              onchange="ED['${f}']=Math.max(0,num(this.value))" onfocus="this.select()">
+          </div>`).join("")}
+      </div>
+
+      <button class="primary" style="width:100%;height:46px;font-size:15px;margin-top:18px" onclick="A.saveEdit()">Enregistrer</button>
+      ${ED.id?`
+        <button class="row" style="gap:6px;margin:14px auto 0;font-size:13px;color:${CONFIRM===ck?"var(--red)":"var(--faint)"}"
+          onclick="A.delFromModal()">${ico("trash",14)} ${CONFIRM===ck?"Confirmer la suppression ?":"Supprimer cet atelier"}</button>`:""}
+    </div>
+  </div>`;
+}
+
+/* ---------------- photo : capture + compression ---------------- */
+document.getElementById("photoInput").addEventListener("change",function(){
+  const f=this.files[0]; this.value="";
+  if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const MAX=480, sc=Math.min(1,MAX/Math.max(img.width,img.height));
+      const c=document.createElement("canvas");
+      c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc);
+      c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      const data=c.toDataURL("image/jpeg",0.72);
+      if(PHOTO_TARGET==="ED"&&ED){ ED.photo=data; renderModal(); }
+      else{ const a=byId(PHOTO_TARGET); if(a){ a.photo=data; save(); render(); toast("Photo enregistrée."); } }
+      PHOTO_TARGET=null;
+    };
+    img.src=r.result;
+  };
+  r.readAsDataURL(f);
+});
+
+/* ---------------- import JSON ---------------- */
+document.getElementById("importInput").addEventListener("change",function(){
+  const f=this.files[0]; this.value="";
+  if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const obj=JSON.parse(r.result);
+      if(!obj||!Array.isArray(obj.ateliers)||!Array.isArray(obj.sessions)) throw 0;
+      if(!window.confirm("Remplacer toutes les données actuelles par le fichier importé ?")) return;
+      D=Object.assign(seed(),obj); save(); render(); toast("Import réussi.");
+    }catch(e){ toast("Fichier invalide — export Carnet Muscu attendu."); }
+  };
+  r.readAsText(f);
+});
+
+/* ================================================================
+   ACTIONS
+   ================================================================ */
+const A={
+  setTab(t){ TAB=t; CONFIRM=null; render(); },
+  setDate(v){ NEWDATE=v||today(); OVERRIDE=false; render(); },
+  tg(g){ SEL=SEL.includes(g)?SEL.filter(x=>x!==g):(SEL.length<2?[...SEL,g]:SEL); render(); },
+  override(){ OVERRIDE=!OVERRIDE; render(); },
+  start(){
+    D.active={date:NEWDATE,groups:[...SEL],vals:{}};
+    D.active.groups.flatMap(g=>ofGroup(g)).forEach(a=>gv(a));
+    OVERRIDE=false; save(); render();
+  },
+  bump(id,f,d){ const v=gv(byId(id)); const st=f==="poids"?100:1;
+    v[f]=Math.max(0,Math.round((v[f]+d)*st)/st); save(); render(); },
+  setVal(id,f,val){ const v=gv(byId(id)); const n=Math.max(0,num(val));
+    v[f]=f==="poids"?n:Math.round(n); save(); render(); },
+  applySugg(id){ const a=byId(id); gv(a).poids=sugg(a); save(); render(); },
+  validate(id){ const v=gv(byId(id));
+    if(v.reps<1)v.reps=1; if(v.series<1)v.series=1;
+    v.done=true; save(); render(); },
+  reopen(id){ gv(byId(id)).done=false; save(); render(); },
+  cancel(){ conf("cancel",()=>{ D.active=null; save(); render(); }); },
+  finish(){
+    const S=D.active;
+    const entries=[];
+    S.groups.flatMap(g=>ofGroup(g)).forEach(a=>{
+      const v=gv(a);
+      if(v.done){
+        entries.push({atelierId:a.id,name:a.name,group:a.group,poids:v.poids,reps:v.reps,series:v.series});
+        a.poids=v.poids; a.reps=v.reps; a.series=v.series;   // nouvelles références
+      }
+    });
+    if(!entries.length)return;
+    const sess={id:uid(),date:S.date,groups:S.groups,createdAt:new Date().toISOString(),entries};
+    D.sessions.push(sess);
+    D.sessions.sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:(a.createdAt<b.createdAt?1:-1));
+    D.active=null; SEL=[]; NEWDATE=today(); save();
+    EXPANDED=sess.id; TAB="historique"; render();
+    toast("Séance enregistrée.");
+  },
+
+  gsel(g){ GSEL=g; render(); },
+  photoFor(t){ PHOTO_TARGET=t; document.getElementById("photoInput").click(); },
+  edit(id){
+    const a=id?byId(id):null;
+    ED=a?{id:a.id,group:a.group,name:a.name,photo:a.photo,poids:a.poids,reps:a.reps,series:a.series}
+        :{id:null,group:GSEL,name:"",photo:null,poids:20,reps:10,series:3};
+    renderModal();
+  },
+  edPhoto(v){ if(ED){ED.photo=v; renderModal();} },
+  closeEdit(){ ED=null; CONFIRM=null; renderModal(); },
+  saveEdit(){
+    if(!ED)return;
+    const name=(ED.name||"").trim();
+    if(!name){ toast("Donne un nom à l’atelier."); return; }
+    if(ED.id){ Object.assign(byId(ED.id),{name,photo:ED.photo,poids:ED.poids,reps:ED.reps,series:ED.series}); }
+    else{ D.ateliers.push({id:uid(),group:ED.group,name,photo:ED.photo,poids:ED.poids,reps:ED.reps,series:ED.series}); }
+    ED=null; save(); render(); renderModal();
+  },
+  delAtelier(id){ conf("a:"+id,()=>{ D.ateliers=D.ateliers.filter(a=>a.id!==id); save(); render(); }); },
+  delFromModal(){ conf("ed-del",()=>{ D.ateliers=D.ateliers.filter(a=>a.id!==ED.id); ED=null; save(); render(); renderModal(); }); },
+
+  prog(id){ PROG=id; render(); },
+  expand(id){ EXPANDED=EXPANDED===id?null:id; render(); },
+  delSession(id){ conf("s:"+id,()=>{ D.sessions=D.sessions.filter(s=>s.id!==id); save(); render(); }); },
+
+  exportJSON(){
+    D.lastExport=new Date().toISOString(); save();
+    const blob=new Blob([JSON.stringify(D,null,2)],{type:"application/json"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="carnet-muscu-"+today()+".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    render(); toast("Export téléchargé.");
+  }
+};
+
+/* ================================================================
+   RENDU
+   ================================================================ */
+const TABS=[
+  {id:"seance",label:"Séance",icon:"barbell"},
+  {id:"ateliers",label:"Ateliers",icon:"grid"},
+  {id:"progres",label:"Progrès",icon:"line"},
+  {id:"historique",label:"Historique",icon:"clip"}
+];
+
+function render(){
+  let body="";
+  if(TAB==="seance") body=D.active?vSession():vStart();
+  else if(TAB==="ateliers") body=vAteliers();
+  else if(TAB==="progres") body=vProgress();
+  else body=vHistory();
+
+  document.getElementById("app").innerHTML=`
+    <div class="wrap">${body}</div>
+    <nav class="tabbar"><div class="in">
+      ${TABS.map(t=>`
+        <button class="tab ${TAB===t.id?"on":""}" onclick="A.setTab('${t.id}')">
+          ${ico(t.icon,20)}<span>${t.label}</span>
+          ${t.id==="seance"&&D.active?'<span class="dot"></span>':""}
+        </button>`).join("")}
+    </div></nav>`;
+}
+
+load();
+render();
+
+/* ---- PWA : hors-ligne + stockage persistant ---- */
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  navigator.serviceWorker.register("./sw.js").catch(function(){});
+}
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persist().catch(function(){});
+}
+</script>
+</body>
+</html>
