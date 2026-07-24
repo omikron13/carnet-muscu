@@ -1,9 +1,13 @@
-/* Carnet Muscu — service worker
-   Au premier chargement en ligne, toute l'app est mise en cache.
-   Ensuite : fonctionnement 100 % hors-ligne, indépendant de l'hébergement.
-   Pour publier une mise à jour de l'app : incrémenter SHELL ci-dessous. */
+/* Carnet Muscu — service worker v4
+   Stratégie :
+   - installation : re-télécharge tout en ignorant le cache HTTP
+     (indispensable sur GitHub Pages, qui met les fichiers en cache 10 min)
+   - navigation : réseau d'abord → toujours la dernière version quand on est en ligne,
+     cache en secours → fonctionnement hors-ligne garanti
+   - polices : mises en cache à la volée
+   Pour publier une mise à jour : incrémenter SHELL ci-dessous. */
 
-const SHELL = "cm-shell-v3";
+const SHELL = "cm-shell-v4";
 const FONTS = "cm-fonts";
 const ASSETS = [
   "./",
@@ -15,7 +19,12 @@ const ASSETS = [
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
-    caches.open(SHELL).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(SHELL).then((c) =>
+      Promise.all(ASSETS.map((u) =>
+        fetch(new Request(u, { cache: "reload" }))
+          .then((r) => { if (!r.ok) throw new Error("fetch " + u); return c.put(u, r); })
+      ))
+    ).then(() => self.skipWaiting())
   );
 });
 
@@ -32,7 +41,7 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
 
-  /* Polices Google : cache à la première visite, puis servies hors-ligne */
+  /* Polices Google : cache à la première visite, puis hors-ligne */
   if (url.hostname.indexOf("fonts.g") !== -1) {
     e.respondWith(
       caches.open(FONTS).then(async (c) => {
@@ -46,10 +55,16 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  /* Navigation : toujours servir l'app depuis le cache (offline-first) */
+  /* Navigation : réseau d'abord, cache en secours */
   if (e.request.mode === "navigate") {
     e.respondWith(
-      caches.match("./index.html").then((r) => r || fetch(e.request))
+      fetch(e.request, { cache: "no-store" })
+        .then((r) => {
+          const copy = r.clone();
+          caches.open(SHELL).then((c) => c.put("./index.html", copy));
+          return r;
+        })
+        .catch(() => caches.match("./index.html"))
     );
     return;
   }

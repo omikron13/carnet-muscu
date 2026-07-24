@@ -321,7 +321,7 @@ function vStart(){
     </div>
 
     <div class="mono" style="color:var(--faint);font-size:11px;margin-top:14px;line-height:1.7">
-      Programme : 2 groupes par séance · 3 ateliers par groupe · 1 jour de repos minimum entre les séances.
+      Programme : 2 groupes par séance · 3 ateliers par groupe · 1 jour de repos minimum entre les séances. · <b>App v3.1</b>
     </div>
   </div>`;
 }
@@ -616,7 +616,7 @@ function vHistory(){
         Exporte régulièrement un fichier JSON : c’est ta sauvegarde portable.
       </div>
       <div class="mono" style="color:var(--faint);font-size:11px;margin-top:8px">
-        Dernier export : ${D.lastExport?fmt(D.lastExport.slice(0,10))+" · "+new Date(D.lastExport).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"jamais"}
+        Dernier export : ${D.lastExport?fmt(D.lastExport.slice(0,10))+" · "+new Date(D.lastExport).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"jamais"} · App v3.1
       </div>
       <div class="row" style="gap:10px;margin-top:13px">
         <button class="primary" style="flex:1;height:42px;font-size:14px" onclick="A.exportJSON()">${ico("dl",15)} Exporter JSON</button>
