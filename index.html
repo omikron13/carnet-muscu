@@ -116,6 +116,9 @@ let EXPANDED = null;          // séance dépliée dans l'historique
 let CONFIRM = null;           // clé de confirmation (suppressions)
 let ED = null;                // brouillon d'atelier (modale)
 let PHOTO_TARGET = null;      // destinataire de la prochaine photo
+let REST = null;              // minuteur de repos en cours {end:timestamp}
+let AC = null;                // contexte audio (sonnerie)
+let WL = null;                // wake lock écran pendant la séance
 
 /* ---------------- utilitaires ---------------- */
 function uid(){ return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3); }
@@ -143,7 +146,8 @@ const P = {
   grid:'<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>',
   line:'<path d="M4 19h16M6 15l4-4 3 3 5-6"/>',
   clip:'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h4"/>',
-  up:'<path d="M12 19V5m0 0-5 5m5-5 5 5"/>'
+  up:'<path d="M12 19V5m0 0-5 5m5-5 5 5"/>',
+  timer:'<circle cx="12" cy="13" r="7"/><path d="M12 10v3l2 1M9 2h6M12 2v3"/>'
 };
 function ico(n,s,c){ s=s||16;
   return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="'+(c||"currentColor")+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto">'+P[n]+'</svg>';
@@ -171,10 +175,54 @@ function save(){
   try{ localStorage.setItem(KEY,JSON.stringify(D)); }
   catch(e){ toast("Stockage plein ou indisponible — exporte tes données en JSON."); }
 }
-function toast(m){
+function toast(m,ms){
   const t=document.getElementById("toast");
   t.textContent=m; t.classList.add("show");
-  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2600);
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),ms||2600);
+}
+
+/* ---------------- son, wake lock & minuteur de repos ---------------- */
+function audio(){
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==="suspended")AC.resume();
+  }catch(e){}
+  return AC;
+}
+function chime(){
+  try{
+    const a=audio(); if(!a)return;
+    const t0=a.currentTime;
+    [[880,0],[1175,.18],[1568,.36]].forEach(([f,dt])=>{
+      const o=a.createOscillator(),g=a.createGain();
+      o.type="sine"; o.frequency.value=f;
+      g.gain.setValueAtTime(.0001,t0+dt);
+      g.gain.exponentialRampToValueAtTime(.5,t0+dt+.02);
+      g.gain.exponentialRampToValueAtTime(.0001,t0+dt+.5);
+      o.connect(g).connect(a.destination);
+      o.start(t0+dt); o.stop(t0+dt+.55);
+    });
+  }catch(e){}
+  if(navigator.vibrate) navigator.vibrate([180,90,180]);
+}
+async function wakeLock(){
+  try{
+    if(D&&D.active&&"wakeLock" in navigator&&!WL){
+      WL=await navigator.wakeLock.request("screen");
+      WL.addEventListener("release",()=>{WL=null;});
+    }
+  }catch(e){}
+}
+function wakeRelease(){ try{ if(WL){WL.release();WL=null;} }catch(e){} }
+function restLeft(){
+  const s=Math.max(0,Math.ceil((REST.end-Date.now())/1000));
+  return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+}
+function restChip(){
+  if(REST)
+    return `<button class="chip" style="border-color:var(--amber);color:var(--text);padding:4px 12px;gap:6px" onclick="A.rest()">
+      ${ico("timer",13,"var(--amber)")}<span class="mono" id="restCount" style="font-weight:600">${restLeft()}</span></button>`;
+  return `<button class="chip" style="padding:4px 12px;gap:6px" onclick="A.rest()">${ico("timer",13)}Repos 60 s</button>`;
 }
 
 /* ---------------- dérivés ---------------- */
@@ -294,8 +342,11 @@ function vSession(){
       <button style="color:${CONFIRM==="cancel"?"var(--red)":"var(--faint)"};font-size:13px;font-weight:600"
         onclick="A.cancel()">${CONFIRM==="cancel"?"Confirmer ?":"Annuler"}</button>
     </div>
-    <div class="mono" style="color:var(--faint);font-size:12px;margin-top:5px">
-      ${S.groups.join(" + ")} · ${doneN}/${list.length} validés · ${nf(volume)} kg
+    <div class="row" style="justify-content:space-between;gap:10px;margin-top:6px">
+      <span class="mono" style="color:var(--faint);font-size:12px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+        ${S.groups.join(" + ")} · ${doneN}/${list.length} validés · ${nf(volume)} kg
+      </span>
+      ${restChip()}
     </div>
   </div>
 
@@ -618,26 +669,43 @@ function renderModal(){
   </div>`;
 }
 
-/* ---------------- photo : capture + compression ---------------- */
-document.getElementById("photoInput").addEventListener("change",function(){
+/* ---------------- photo : décodage robuste + compression ---------------- */
+async function decodePhoto(f){
+  let src=null,w=0,h=0,bmp=null,url=null;
+  try{ bmp=await createImageBitmap(f,{imageOrientation:"from-image"}); }
+  catch(e){ try{ bmp=await createImageBitmap(f); }catch(e2){} }
+  if(bmp){ src=bmp; w=bmp.width; h=bmp.height; }
+  else{
+    url=URL.createObjectURL(f);
+    src=await new Promise((res,rej)=>{
+      const i=new Image();
+      i.onload=()=>res(i);
+      i.onerror=()=>rej(new Error("decode"));
+      i.src=url;
+    });
+    w=src.naturalWidth; h=src.naturalHeight;
+  }
+  if(!w||!h) throw new Error("dim");
+  const MAX=480, sc=Math.min(1,MAX/Math.max(w,h));
+  const c=document.createElement("canvas");
+  c.width=Math.max(1,Math.round(w*sc)); c.height=Math.max(1,Math.round(h*sc));
+  c.getContext("2d").drawImage(src,0,0,c.width,c.height);
+  if(url) URL.revokeObjectURL(url);
+  if(bmp&&bmp.close) bmp.close();
+  return c.toDataURL("image/jpeg",0.72);
+}
+
+document.getElementById("photoInput").addEventListener("change",async function(){
   const f=this.files[0]; this.value="";
   if(!f)return;
-  const r=new FileReader();
-  r.onload=()=>{
-    const img=new Image();
-    img.onload=()=>{
-      const MAX=480, sc=Math.min(1,MAX/Math.max(img.width,img.height));
-      const c=document.createElement("canvas");
-      c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc);
-      c.getContext("2d").drawImage(img,0,0,c.width,c.height);
-      const data=c.toDataURL("image/jpeg",0.72);
-      if(PHOTO_TARGET==="ED"&&ED){ ED.photo=data; renderModal(); }
-      else{ const a=byId(PHOTO_TARGET); if(a){ a.photo=data; save(); render(); toast("Photo enregistrée."); } }
-      PHOTO_TARGET=null;
-    };
-    img.src=r.result;
-  };
-  r.readAsDataURL(f);
+  const target=PHOTO_TARGET; PHOTO_TARGET=null;
+  try{
+    const data=await decodePhoto(f);
+    if(target==="ED"&&ED){ ED.photo=data; renderModal(); }
+    else{ const a=byId(target); if(a){ a.photo=data; save(); render(); toast("Photo enregistrée."); } }
+  }catch(e){
+    toast("Photo illisible — probablement au format HEIC. Sur Samsung : Appareil photo → Paramètres → Formats d’image → désactiver « Haute efficacité ». Ou partage-toi la photo (elle sera convertie en JPEG) et réessaie.",6500);
+  }
 });
 
 /* ---------------- import JSON ---------------- */
@@ -667,7 +735,7 @@ const A={
   start(){
     D.active={date:NEWDATE,groups:[...SEL],vals:{}};
     D.active.groups.flatMap(g=>ofGroup(g)).forEach(a=>gv(a));
-    OVERRIDE=false; save(); render();
+    OVERRIDE=false; wakeLock(); save(); render();
   },
   bump(id,f,d){ const v=gv(byId(id)); const st=f==="poids"?100:1;
     v[f]=Math.max(0,Math.round((v[f]+d)*st)/st); save(); render(); },
@@ -678,7 +746,12 @@ const A={
     if(v.reps<1)v.reps=1; if(v.series<1)v.series=1;
     v.done=true; save(); render(); },
   reopen(id){ gv(byId(id)).done=false; save(); render(); },
-  cancel(){ conf("cancel",()=>{ D.active=null; save(); render(); }); },
+  rest(){
+    audio();                       /* déverrouille le son (geste utilisateur) */
+    REST = REST ? null : {end:Date.now()+60000};
+    render();
+  },
+  cancel(){ conf("cancel",()=>{ D.active=null; REST=null; wakeRelease(); save(); render(); }); },
   finish(){
     const S=D.active;
     const entries=[];
@@ -693,7 +766,7 @@ const A={
     const sess={id:uid(),date:S.date,groups:S.groups,createdAt:new Date().toISOString(),entries};
     D.sessions.push(sess);
     D.sessions.sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:(a.createdAt<b.createdAt?1:-1));
-    D.active=null; SEL=[]; NEWDATE=today(); save();
+    D.active=null; SEL=[]; NEWDATE=today(); REST=null; wakeRelease(); save();
     EXPANDED=sess.id; TAB="historique"; render();
     toast("Séance enregistrée.");
   },
@@ -765,6 +838,23 @@ function render(){
 
 load();
 render();
+
+/* ---- minuteur de repos : tick global ---- */
+setInterval(()=>{
+  if(!REST) return;
+  if(Date.now()>=REST.end){
+    REST=null; chime();
+    toast("Repos terminé — c\u2019est reparti !");
+    render();
+  } else {
+    const el=document.getElementById("restCount");
+    if(el) el.textContent=restLeft();
+  }
+},250);
+if(D.active) wakeLock();
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible") wakeLock();
+});
 
 /* ---- PWA : hors-ligne + stockage persistant ---- */
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {

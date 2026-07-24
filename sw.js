@@ -3,7 +3,7 @@
    Ensuite : fonctionnement 100 % hors-ligne, indépendant de l'hébergement.
    Pour publier une mise à jour de l'app : incrémenter SHELL ci-dessous. */
 
-const SHELL = "cm-shell-v2";
+const SHELL = "cm-shell-v3";
 const FONTS = "cm-fonts";
 const ASSETS = [
   "./",

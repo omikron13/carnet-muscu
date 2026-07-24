@@ -1,8 +1,8 @@
 # Carnet Muscu — app autonome
 
 Suivi d'entraînement 100 % local : séances (2 groupes musculaires, jour de repos obligatoire),
-ateliers avec photos, charges/réps/séries, courbes de progression et alerte d'augmentation
-après 2 séances au même poids.
+ateliers avec photos, charges/réps/séries, courbes de progression, alerte d'augmentation
+après 2 séances au même poids, et minuteur de repos 60 s avec sonnerie.
 
 **Aucune donnée ne quitte le téléphone.** Tout est stocké en local (localStorage) et
 sauvegardable/restaurable en un clic via un fichier JSON (onglet Historique → Exporter / Importer).
@@ -40,6 +40,14 @@ ni garantie hors-ligne du service worker. Dans ce cas, exporter le JSON réguli�
   (séances, ateliers, photos comprises).
 - **Importer** restaure ce fichier à l'identique — changement de téléphone,
   réinstallation, ou édition manuelle (JSON lisible).
+
+## Astuce photos (Samsung)
+
+Si une photo de la galerie ne s'associe pas à un atelier, elle est probablement
+au format HEIC (« images haute efficacité », activé par défaut sur Samsung),
+que Chrome ne sait pas lire. Deux solutions : Appareil photo → Paramètres →
+Formats d'image → désactiver « Haute efficacité » (les nouvelles photos seront
+en JPEG), ou partager la photo vers soi-même (la conversion JPEG est automatique).
 
 ## Mise à jour de l'app
 
